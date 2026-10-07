@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   createInitialState, applyTime, hearts, mood, clamp,
   MAX_CATCHUP_MS, DEFAULT_TASKS,
+  feed, play, wash, sleepPet, wake, petTouch, shouldAutoSleep,
 } from '../js/state.js';
 
 const H = 3600 * 1000;
@@ -81,3 +82,64 @@ test('mood by average; asleep overrides', () => {
 });
 
 test('clamp', () => { assert.equal(clamp(-3), 0); assert.equal(clamp(120), 100); assert.equal(clamp(42), 42); });
+
+const withStats = (st, extra = {}) => ({ ...base(), ...extra, stats: { ...base().stats, ...st } });
+
+test('feed: +40 capped at 100, refused at >=85, asleep result', () => {
+  const r = feed(withStats({ hunger: 30 }), T0);
+  assert.equal(r.result, 'ate'); assert.equal(r.state.stats.hunger, 70);
+  assert.equal(feed(withStats({ hunger: 85 }), T0).result, 'refused');
+  assert.equal(feed(withStats({ hunger: 84 }), T0).state.stats.hunger, 100);
+  assert.equal(feed(withStats({ hunger: 10 }, { asleep: true }), T0).result, 'asleep');
+});
+
+test('feed applies elapsed time first', () => {
+  const r = feed(withStats({ hunger: 100 }), T0 + 6 * H); // 50 after 6h → 90
+  assert.equal(r.result, 'ate'); assert.equal(r.state.stats.hunger, 90);
+});
+
+test('play: +35', () => {
+  const r = play(withStats({ fun: 10 }), T0);
+  assert.equal(r.result, 'played'); assert.equal(r.state.stats.fun, 45);
+});
+
+test('wash: +60, already_clean at >=90', () => {
+  assert.equal(wash(withStats({ clean: 20 }), T0).state.stats.clean, 80);
+  assert.equal(wash(withStats({ clean: 90 }), T0).result, 'already_clean');
+});
+
+test('sleepPet / wake', () => {
+  const r = sleepPet(withStats({ energy: 20 }), T0);
+  assert.equal(r.result, 'slept'); assert.equal(r.state.asleep, true);
+  assert.equal(sleepPet(withStats({ energy: 95 }), T0).result, 'not_sleepy');
+  assert.equal(sleepPet(r.state, T0).result, 'already');
+  const w = wake(r.state, T0 + 30 * 60 * 1000);
+  assert.equal(w.result, 'woke'); assert.equal(w.state.asleep, false);
+  assert.equal(w.state.stats.energy, 45); // 20 + 25 (30분)
+  assert.equal(wake(w.state, T0).result, 'already_awake');
+});
+
+test('petTouch: +3 fun once per minute', () => {
+  const a = petTouch(withStats({ fun: 50 }), T0);
+  assert.equal(a.bonus, true); assert.equal(a.state.stats.fun, 53);
+  const b = petTouch(a.state, T0 + 30 * 1000);
+  assert.equal(b.bonus, false); assert.ok(b.state.stats.fun < 53 && b.state.stats.fun > 52.9); // decay ~0.083
+  const c = petTouch(b.state, T0 + 61 * 1000);
+  assert.equal(c.bonus, true);
+});
+
+test('care lowers gloom and sets lastCareAt', () => {
+  const s = { ...withStats({ hunger: 10 }), gloom: 3 };
+  const r = feed(s, T0 + 1000);
+  assert.equal(r.state.gloom, 2); assert.equal(r.state.lastCareAt, T0 + 1000);
+  assert.equal(feed(withStats({ hunger: 90 }, { gloom: 2 }), T0).state.gloom, 2); // 거절은 돌봄 아님
+});
+
+test('shouldAutoSleep: 22:00+ or before 04:00 with energy<30, awake only', () => {
+  const at = (h) => new Date(2026, 9, 7, h, 10).getTime();
+  assert.equal(shouldAutoSleep(withStats({ energy: 20 }), at(22)), true);
+  assert.equal(shouldAutoSleep(withStats({ energy: 20 }), at(2)), true);
+  assert.equal(shouldAutoSleep(withStats({ energy: 20 }), at(21)), false);
+  assert.equal(shouldAutoSleep(withStats({ energy: 30 }), at(23)), false);
+  assert.equal(shouldAutoSleep(withStats({ energy: 20 }, { asleep: true }), at(23)), false);
+});

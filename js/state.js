@@ -55,6 +55,7 @@ export function createInitialState({ kind, name, pin }, now = clock.now()) {
 
 export function applyTime(state, now = clock.now()) {
   const elapsed = Math.min(Math.max(0, now - state.statsAt), MAX_CATCHUP_MS);
+  if (process.env.DEBUG_APPLY) console.log('[applyTime] elapsed:', elapsed, 'now:', now, 'statsAt:', state.statsAt);
   if (elapsed === 0) return state;
   const stats = { ...state.stats };
   let asleep = state.asleep;
@@ -86,4 +87,57 @@ export function mood(state) {
   if (avg >= 55) return 'normal';
   if (avg >= 35) return 'gloomy';
   return 'sad';
+}
+
+function cared(state, now) {
+  return { ...state, lastCareAt: now, gloom: Math.max(0, state.gloom - 1) };
+}
+function bump(state, key, amount) {
+  return { ...state, stats: { ...state.stats, [key]: clamp(state.stats[key] + amount) } };
+}
+
+export function feed(state, now = clock.now()) {
+  const s = applyTime(state, now);
+  if (s.asleep) return { state: s, result: 'asleep' };
+  if (s.stats.hunger >= REFUSE.feed) return { state: s, result: 'refused' };
+  return { state: cared(bump(s, 'hunger', GAIN.feed), now), result: 'ate' };
+}
+
+export function play(state, now = clock.now()) {
+  const s = applyTime(state, now);
+  if (s.asleep) return { state: s, result: 'asleep' };
+  return { state: cared(bump(s, 'fun', GAIN.play), now), result: 'played' };
+}
+
+export function wash(state, now = clock.now()) {
+  const s = applyTime(state, now);
+  if (s.asleep) return { state: s, result: 'asleep' };
+  if (s.stats.clean >= REFUSE.wash) return { state: s, result: 'already_clean' };
+  return { state: cared(bump(s, 'clean', GAIN.wash), now), result: 'washed' };
+}
+
+export function sleepPet(state, now = clock.now()) {
+  const s = applyTime(state, now);
+  if (s.asleep) return { state: s, result: 'already' };
+  if (s.stats.energy >= REFUSE.sleep) return { state: s, result: 'not_sleepy' };
+  return { state: cared({ ...s, asleep: true }, now), result: 'slept' };
+}
+
+export function wake(state, now = clock.now()) {
+  const s = applyTime(state, now);
+  if (!s.asleep) return { state: s, result: 'already_awake' };
+  return { state: { ...s, asleep: false }, result: 'woke' };
+}
+
+export function petTouch(state, now = clock.now()) {
+  const s = applyTime(state, now);
+  if (s.asleep || now - s.petBonusAt < PET_BONUS_INTERVAL_MS) return { state: s, bonus: false };
+  return { state: { ...bump(s, 'fun', GAIN.pet), petBonusAt: now }, bonus: true };
+}
+
+export function shouldAutoSleep(state, now = clock.now()) {
+  if (state.asleep) return false;
+  const h = new Date(now).getHours();
+  const night = h >= 22 || h < 4;
+  return night && state.stats.energy < 30;
 }
