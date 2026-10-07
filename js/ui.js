@@ -89,7 +89,7 @@ export function createUI(handlers) {
   });
   ui.askPin = (expected) => new Promise((resolve) => {
     let tries = 0;
-    const { dg, close } = dialog(`<div class="grownup">아빠 비밀번호</div><input inputmode="numeric" maxlength="4" autofocus><div class="row"><button class="primary" data-v="ok">확인</button><button data-v="no">취소</button></div>`);
+    const { dg, close } = dialog(`<div class="grownup">아빠 비밀번호</div><input type="password" inputmode="numeric" maxlength="4" autofocus><div class="row"><button class="primary" data-v="ok">확인</button><button data-v="no">취소</button></div>`);
     const input = dg.querySelector('input'); input.focus();
     const submit = () => {
       if (input.value === expected) { close(); resolve(true); return; }

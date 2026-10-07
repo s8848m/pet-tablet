@@ -10,6 +10,8 @@ import { mountSettings } from './settings.js';
 const storage = createStorage();
 const sound = createSound();
 let state = null, view = null, idleTimer = null;
+let lastWakeAt = -Infinity; // 깨운 직후 자동 재취침 방지용(저장 안 함)
+const WAKE_GRACE_MS = 20 * 60 * 1000;
 const MOOD_FACE = { happy: 'happy', normal: 'normal', gloomy: 'sad', sad: 'cry', asleep: 'sleep' };
 
 const ui = createUI({ onCare, onTaskTap, onNameLongPress, onSoundToggle, onHatch });
@@ -33,20 +35,28 @@ let playSeq = 0;
 async function playIds(ids) {
   clearTimeout(idleTimer);
   const mine = ++playSeq; // 새 재생이 시작되면 옛 재생열은 남은 행동을 버린다
-  for (const id of ids) {
-    if (mine !== playSeq) return;
-    const b = BEHAVIORS[id]; if (b.sound) sound.play(b.sound);
-    await view.play(b, { restFace: MOOD_FACE[S.mood(state)] });
+  try {
+    for (const id of ids) {
+      if (mine !== playSeq) return;
+      const b = BEHAVIORS[id]; if (b.sound) sound.play(b.sound);
+      await view.play(b, { restFace: MOOD_FACE[S.mood(state)] });
+    }
+  } finally {
+    if (mine === playSeq) scheduleIdle(); // 행동 조회·재생이 실패해도 아이들 타이머는 이어진다
   }
-  if (mine === playSeq) scheduleIdle();
 }
 function scheduleIdle() {
   clearTimeout(idleTimer);
   idleTimer = setTimeout(() => { if (!view.isPlaying()) playIds([pickIdle(ctx())]); else scheduleIdle(); }, 2500 + Math.random() * 3500);
 }
 
+function wakeUp() {
+  lastWakeAt = clock.now();
+  const r = S.wake(state); commit(r.state); playIds([WAKE_ID]);
+}
+
 function onCare(kind) {
-  if (state.asleep) { const r = S.wake(state); commit(r.state); playIds([WAKE_ID]); return; }
+  if (state.asleep) { wakeUp(); return; }
   const fn = { feed: S.feed, play: S.play, wash: S.wash, sleep: S.sleepPet }[kind];
   const r = fn(state); commit(r.state);
   if (r.result === 'not_sleepy') { ui.toast('아직 안 졸려요'); return; }
@@ -86,7 +96,7 @@ function commitNew(s) {
 }
 
 function onGesture(g) {
-  if (state.asleep) { const r = S.wake(state); commit(r.state); playIds([WAKE_ID]); return; }
+  if (state.asleep) { wakeUp(); return; }
   if (g === 'patHead') { const r = S.petTouch(state); commit(r.state); }
   if (g === 'drag') { playSeq++; clearTimeout(idleTimer); view.stop(); view.setFace('surprised'); return; }
   const id = forTouch(g);
@@ -99,7 +109,8 @@ function tick() {
   const before = state;
   const next = S.rollover(S.applyTime(state), clock.now());
   if (next !== before) { state = next; render(); if (++tickCount % 10 === 0) storage.save(state); } // 10초마다 저장(버튼은 즉시 저장)
-  if (S.shouldAutoSleep(state)) { const r = S.sleepPet(state); commit(r.state); playIds([AUTOSLEEP_ID]); }
+  const mainVisible = !document.querySelector('#screen-main').hidden && document.querySelector('#overlay').hidden;
+  if (mainVisible && clock.now() - lastWakeAt >= WAKE_GRACE_MS && S.shouldAutoSleep(state)) { const r = S.sleepPet(state); commit(r.state); playIds([AUTOSLEEP_ID]); }
 }
 
 function setFromSettings(s) { // 설정 화면의 저장: 화면 전환 없이 저장·렌더만
@@ -115,7 +126,11 @@ function boot() {
   view.onGesture(onGesture);
   mountSettings(ui, () => state, setFromSettings, { storage, sound, view, behaviors: BEHAVIORS, onClose: () => { ui.showScreen('main'); render(); scheduleIdle(); } });
   setInterval(tick, 1000); // state가 null이면 tick은 아무것도 안 한다 (부화 전)
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && state) { const o = S.openApp(state); commit(o.state); } });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || !state) return;
+    const o = S.openApp(state); commit(o.state);
+    if (o.returnedAfterDays >= S.NEGLECT_DAYS) playIds([RETURN_ID]); else scheduleIdle();
+  });
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
   const loaded = storage.load();
   if (!loaded) { ui.showScreen('hatch'); return; }
