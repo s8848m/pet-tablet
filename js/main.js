@@ -131,7 +131,12 @@ function boot() {
     const o = S.openApp(state); commit(o.state);
     if (o.returnedAfterDays >= S.NEGLECT_DAYS) playIds([RETURN_ID]); else scheduleIdle();
   });
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if ('serviceWorker' in navigator) {
+    const hadController = !!navigator.serviceWorker.controller; // 첫 방문엔 새로고침하지 않는다
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !reloaded) { reloaded = true; location.reload(); } });
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
   const loaded = storage.load();
   if (!loaded) { ui.showScreen('hatch'); return; }
   const r = S.openApp(loaded);
