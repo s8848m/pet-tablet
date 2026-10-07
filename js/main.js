@@ -47,7 +47,7 @@ async function playIds(ids) {
 }
 function scheduleIdle() {
   clearTimeout(idleTimer);
-  idleTimer = setTimeout(() => { if (!view.isPlaying()) playIds([pickIdle(ctx())]); else scheduleIdle(); }, 2500 + Math.random() * 3500);
+  idleTimer = setTimeout(() => { if (document.querySelector('#screen-main').hidden || view.isPlaying()) scheduleIdle(); else playIds([pickIdle(ctx())]); }, 2500 + Math.random() * 3500);
 }
 
 function wakeUp() {
