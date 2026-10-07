@@ -67,7 +67,7 @@ const list = [
   B(55, '수건 두르고 반짝', 'wash', 2000, { face: 'smug', anim: { all: 'lean' }, prop: { id: 'towel', slot: 'head' }, fx: 'sparkle', bubble: '깨끗해!', when: (c) => c.result === 'already_clean' }),
   B(56, '이불 덮고 코 골기', 'sleep', 2600, { face: 'sleep', anim: { all: 'lie' }, prop: { id: 'blanket', slot: 'front' }, room: 'dark', fx: 'zzz', sound: 'yawn', when: (c) => c.result === 'slept' }),
   B(57, '꿈 말풍선', 'asleepIdle', 3000, { face: 'sleep', anim: { all: 'lie' }, prop: { id: 'blanket', slot: 'front' }, fx: 'zzz', bubble: ['⭐','🍚','⚽'] }),
-  B(58, '이불 차기', 'asleepIdle', 2400, { face: 'sleep', anim: { all: 'lie', legs: 'kick' }, prop: { id: 'blanket', slot: 'floor' }, fx: 'zzz' }),
+  B(58, '이불 차기', 'asleepIdle', 2400, { face: 'sleep', anim: { all: 'lie', legs: 'kick' }, prop: { id: 'blanketFloor', slot: 'floor' }, fx: 'zzz' }),
   B(59, '깨울 때 투덜', 'wake', 2000, { face: 'grumpy', anim: { all: 'sit', armR: 'rub' }, bubble: '으응…', sound: 'yawn' }),
   B(60, '스스로 눕기', 'autosleep', 3000, { face: 'sleepy', anim: { all: 'lie' }, prop: { id: 'blanket', slot: 'front' }, room: 'dark', fx: 'zzz', sound: 'yawn' }),
 

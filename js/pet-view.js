@@ -88,9 +88,12 @@ export function createPetView(container, { kind = 'mochi' } = {}) {
 
   function showProp(prop) {
     if (!prop || !slots[prop.slot]) return;
-    const use = document.createElementNS(SVG_NS, 'use');
-    use.setAttribute('href', `#p-${prop.id}`);
-    slots[prop.slot].appendChild(use);
+    // <use> 는 회전하는 부모 안에서 Chrome 이 변환을 빠뜨리는 경우가 있어(누운 자세의 이불), 기호 내용을 직접 복제해 넣는다.
+    const sym = svg.querySelector(`#p-${prop.id}`);
+    if (!sym) return;
+    const g = document.createElementNS(SVG_NS, 'g');
+    for (const n of sym.childNodes) g.appendChild(n.cloneNode(true));
+    slots[prop.slot].appendChild(g);
   }
 
   function showBubble(text) {
