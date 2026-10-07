@@ -13,7 +13,7 @@
 - 펫 이름을 3초 길게 누르면 보호자 설정(비밀번호)
 
 ## 개발
-외부 의존성 없음. `node --test test/` 로 규칙 테스트. `python -m http.server 8765` 로 로컬 확인.
+외부 의존성 없음. `npm test` 로 규칙 테스트. `python -m http.server 8765` 로 로컬 확인.
 
 ## 보호자 메모
 
