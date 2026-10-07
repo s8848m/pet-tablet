@@ -44,7 +44,8 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 .care button span { font-size: 40px; }
 .care button:active { transform: translateY(3px); box-shadow: 0 1px 0 #e9dcc5; }
 .care button.disabled { opacity: .5; }
-#pet-stage { border-radius: var(--radius); background: radial-gradient(circle at 50% 85%, #fff1c9, #fff8e7); box-shadow: inset 0 0 0 4px #ffe8a3; transition: filter .8s, background .8s; }
+#pet-stage { border-radius: var(--radius); box-shadow: inset 0 0 0 4px #ffe8a3; transition: filter .8s, background .8s; }
+#pet-stage:not([data-room]) { background: radial-gradient(circle at 50% 85%, #fff1c9, #fff8e7); } /* 방 배경(pet.css)이 있으면 그쪽이 이긴다 */
 .tasks { background: var(--card); border-radius: var(--radius); padding: 12px; overflow: auto; box-shadow: 0 4px 0 #e9dcc5; }
 .tasks h2 { margin: 0 0 8px; font-size: 20px; text-align: center; }
 .tasks ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
