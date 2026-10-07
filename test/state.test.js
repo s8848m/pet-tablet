@@ -4,6 +4,7 @@ import {
   createInitialState, applyTime, hearts, mood, clamp,
   MAX_CATCHUP_MS, DEFAULT_TASKS,
   feed, play, wash, sleepPet, wake, petTouch, shouldAutoSleep,
+  openApp, neglectDays,
 } from '../js/state.js';
 
 const H = 3600 * 1000;
@@ -142,4 +143,31 @@ test('shouldAutoSleep: 22:00+ or before 04:00 with energy<30, awake only', () =>
   assert.equal(shouldAutoSleep(withStats({ energy: 20 }), at(21)), false);
   assert.equal(shouldAutoSleep(withStats({ energy: 30 }), at(23)), false);
   assert.equal(shouldAutoSleep(withStats({ energy: 20 }, { asleep: true }), at(23)), false);
+});
+
+const D = 24 * H;
+
+test('openApp after 3 days: gloom 3, returnedAfterDays 3, lastSeenAt updated, stats decayed(capped)', () => {
+  const r = openApp(base(), T0 + 3 * D);
+  assert.equal(r.returnedAfterDays, 3); assert.equal(r.state.gloom, 3);
+  assert.equal(r.state.lastSeenAt, T0 + 3 * D);
+  assert.equal(r.state.stats.hunger, 0);
+  assert.equal(r.state.today.key, '2026-10-10');
+});
+
+test('openApp same day: gloom unchanged, returnedAfterDays 0', () => {
+  const r = openApp({ ...base(), gloom: 1 }, T0 + H);
+  assert.equal(r.returnedAfterDays, 0); assert.equal(r.state.gloom, 1);
+});
+
+test('neglectDays', () => {
+  assert.equal(neglectDays(base(), T0 + 47 * H), 1);
+  assert.equal(neglectDays(base(), T0 - H), 0);
+});
+
+test('three cares after neglect restore gloom to 0', () => {
+  let s = openApp(base(), T0 + 3 * D).state;
+  const now = T0 + 3 * D;
+  s = feed(s, now).state; s = play(s, now).state; s = wash(s, now).state;
+  assert.equal(s.gloom, 0);
 });

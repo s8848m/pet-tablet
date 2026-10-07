@@ -229,3 +229,14 @@ export function isSlotActive(slot, now = clock.now()) {
   if (slot === 'evening') return h >= 17 || h < 4;
   return true;
 }
+
+export function neglectDays(state, now = clock.now()) {
+  return Math.max(0, Math.floor((now - state.lastSeenAt) / DAY_MS));
+}
+
+export function openApp(state, now = clock.now()) {
+  const returnedAfterDays = neglectDays(state, now);
+  let s = rollover(applyTime(state, now), now);
+  s = { ...s, lastSeenAt: now, gloom: returnedAfterDays >= NEGLECT_DAYS ? 3 : s.gloom };
+  return { state: s, returnedAfterDays };
+}
