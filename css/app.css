@@ -1,0 +1,73 @@
+:root { --bg: #fff8e7; --card: #ffffff; --ink: #3a3a3a; --accent: #ffb703; --accent2: #8ecae6; --done: #95d5b2; --radius: 22px; --top: 120px; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif; overflow: hidden; }
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+.screen { position: fixed; inset: 0; }
+.screen[hidden] { display: none; }
+
+/* 알 고르기 */
+#screen-hatch { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; }
+#screen-hatch h1 { font-size: 36px; margin: 0; }
+.eggs { display: flex; gap: 40px; }
+.egg { width: 160px; height: 200px; transition: transform .2s; }
+.egg:active, .egg.picked { transform: scale(1.1); }
+.egg.shake { animation: eggShake .5s ease-in-out 3; }
+@keyframes eggShake { 0%,100% { rotate: 0deg; } 25% { rotate: -8deg; } 75% { rotate: 8deg; } }
+#hatch-form { display: flex; flex-direction: column; gap: 14px; align-items: center; }
+#hatch-form[hidden] { display: none; }
+#hatch-form input { font-size: 28px; padding: 8px 14px; border-radius: 14px; border: 3px solid var(--accent2); width: 240px; }
+.big { font-size: 28px; padding: 14px 36px; border-radius: var(--radius); background: var(--accent); }
+.grownup { font-size: 16px; }
+
+/* 메인 */
+.topbar { height: var(--top); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 16px; gap: 12px; }
+.hearts { display: grid; gap: 2px; font-size: 18px; }
+.hearts div { display: flex; align-items: center; gap: 6px; }
+.hearts .lbl { width: 26px; text-align: center; }
+.hearts .h { letter-spacing: 2px; color: #ff6b81; }
+.hearts .h .off { color: #e0d8cc; }
+.center { text-align: center; }
+.name { font-size: 30px; font-weight: 700; padding: 4px 18px; border-radius: 16px; background: var(--card); box-shadow: 0 2px 0 #e9dcc5; }
+.badges { font-size: 20px; min-height: 26px; }
+.right { display: flex; justify-content: flex-end; align-items: center; gap: 14px; }
+.stars { font-size: 26px; background: var(--card); padding: 4px 14px; border-radius: 16px; box-shadow: 0 2px 0 #e9dcc5; }
+.stars b { margin-left: 6px; }
+.goal { width: 180px; }
+.goal-bar { height: 16px; background: #eee; border-radius: 8px; overflow: hidden; }
+.goal-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #ffd166, #ff8fab); transition: width .6s; }
+.goal small { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.icon-btn { font-size: 26px; }
+
+.layout { position: absolute; top: var(--top); bottom: 0; left: 0; right: 0; display: grid; grid-template-columns: 130px 1fr 280px; gap: 12px; padding: 0 12px 12px; }
+.care { display: grid; gap: 10px; align-content: center; }
+.care button { background: var(--card); border-radius: var(--radius); font-size: 22px; font-weight: 700; padding: 10px 0; box-shadow: 0 4px 0 #e9dcc5; display: grid; justify-items: center; }
+.care button span { font-size: 40px; }
+.care button:active { transform: translateY(3px); box-shadow: 0 1px 0 #e9dcc5; }
+.care button.disabled { opacity: .5; }
+#pet-stage { border-radius: var(--radius); background: radial-gradient(circle at 50% 85%, #fff1c9, #fff8e7); box-shadow: inset 0 0 0 4px #ffe8a3; transition: filter .8s, background .8s; }
+.tasks { background: var(--card); border-radius: var(--radius); padding: 12px; overflow: auto; box-shadow: 0 4px 0 #e9dcc5; }
+.tasks h2 { margin: 0 0 8px; font-size: 20px; text-align: center; }
+.tasks ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.task { display: grid; grid-template-columns: 56px 1fr; align-items: center; gap: 10px; padding: 6px; border-radius: 16px; background: #fffaf0; }
+.task.dim { opacity: .45; }
+.task.done { background: var(--done); }
+.task .check { width: 52px; height: 52px; border-radius: 50%; border: 4px solid var(--accent2); background: #fff; font-size: 30px; display: grid; place-items: center; }
+.task.done .check { background: #2d6a4f; color: #fff; border-color: #2d6a4f; }
+.task .label { font-size: 22px; font-weight: 700; }
+.task .label small { display: block; font-size: 13px; font-weight: 400; color: #888; }
+
+/* 별 날아가기 */
+.fly-star { position: fixed; font-size: 30px; pointer-events: none; transition: transform .8s cubic-bezier(.2,.8,.2,1), opacity .8s; z-index: 50; }
+
+/* 대화창·토스트 */
+#overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: grid; place-items: center; z-index: 100; }
+#overlay[hidden] { display: none; }
+#dialog { background: #fff; border-radius: var(--radius); padding: 24px; min-width: 320px; text-align: center; font-size: 24px; display: grid; gap: 16px; }
+#dialog .row { display: flex; gap: 12px; justify-content: center; }
+#dialog button { font-size: 24px; padding: 10px 28px; border-radius: 16px; background: #eee; }
+#dialog button.primary { background: var(--accent); }
+#dialog input { font-size: 32px; text-align: center; letter-spacing: 12px; width: 200px; border-radius: 12px; border: 3px solid var(--accent2); }
+#dialog.shake { animation: eggShake .4s; }
+#toast { position: fixed; left: 50%; bottom: 24px; translate: -50% 0; background: #333; color: #fff; padding: 10px 20px; border-radius: 16px; font-size: 20px; z-index: 120; }
+#toast[hidden] { display: none; }
+@media (orientation: portrait) { .layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; } .care { grid-auto-flow: column; } }

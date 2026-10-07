@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>펫 태블릿</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#ffe8a3">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/pet.css">
+</head>
+<body>
+<!-- 1. 알 고르기 -->
+<section id="screen-hatch" class="screen" hidden>
+  <h1>알을 골라 주세요</h1>
+  <div class="eggs">
+    <button class="egg" data-kind="mochi" aria-label="하얀 알"><svg viewBox="0 0 100 120"><ellipse cx="50" cy="65" rx="38" ry="50" fill="#fff7f0" stroke="#d9b8a8" stroke-width="4"/><circle cx="40" cy="55" r="6" fill="#ffd6e0"/></svg></button>
+    <button class="egg" data-kind="coco" aria-label="갈색 알"><svg viewBox="0 0 100 120"><ellipse cx="50" cy="65" rx="38" ry="50" fill="#e0b48a" stroke="#8a5a33" stroke-width="4"/><circle cx="60" cy="75" r="7" fill="#c98b5b"/></svg></button>
+    <button class="egg" data-kind="pico" aria-label="민트 알"><svg viewBox="0 0 100 120"><ellipse cx="50" cy="65" rx="38" ry="50" fill="#c8f2e8" stroke="#3f9c8a" stroke-width="4"/><path d="M30 60 l10 10 10 -10 10 10 10 -10" fill="none" stroke="#9fe3d4" stroke-width="4"/></svg></button>
+  </div>
+  <form id="hatch-form" hidden>
+    <label>이름을 지어 주세요 <input id="hatch-name" maxlength="8" autocomplete="off" required></label>
+    <label class="grownup">아빠 비밀번호 4자리 <input id="hatch-pin" inputmode="numeric" pattern="\d{4}" maxlength="4" required></label>
+    <button type="submit" class="big">태어나기!</button>
+  </form>
+</section>
+
+<!-- 2. 메인 -->
+<section id="screen-main" class="screen" hidden>
+  <header class="topbar">
+    <div class="hearts" id="hearts"></div>
+    <div class="center">
+      <button id="pet-name" class="name"></button>
+      <div id="badges" class="badges"></div>
+    </div>
+    <div class="right">
+      <div class="stars"><span>⭐</span><b id="star-count">0</b></div>
+      <div id="goal" class="goal" hidden><div class="goal-bar"><i id="goal-fill"></i></div><small id="goal-text"></small></div>
+      <button id="sound" class="icon-btn" aria-label="소리">🔊</button>
+    </div>
+  </header>
+  <main class="layout">
+    <nav class="care">
+      <button data-care="feed"><span>🍚</span>밥</button>
+      <button data-care="play"><span>⚽</span>놀기</button>
+      <button data-care="wash"><span>🛁</span>씻기</button>
+      <button data-care="sleep"><span>🛏️</span>재우기</button>
+    </nav>
+    <div id="pet-stage"></div>
+    <aside class="tasks"><h2>오늘의 할 일</h2><ul id="task-list"></ul></aside>
+  </main>
+</section>
+
+<!-- 3. 아빠 설정 (Task 10) -->
+<section id="screen-settings" class="screen grownup" hidden></section>
+
+<div id="overlay" hidden><div id="dialog" role="dialog"></div></div>
+<div id="toast" hidden></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
