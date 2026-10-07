@@ -4,7 +4,7 @@ import { createPetView } from './pet-view.js';
 
 const SLOTS = [['morning', '아침'], ['day', '낮'], ['evening', '저녁'], ['any', '아무 때나']];
 
-export function mountSettings(ui, getState, setState, { storage, sound, behaviors, onClose }) {
+export function mountSettings(ui, getState, setState, { storage, sound, behaviors, onReset, onClose }) {
   const root = ui.settingsRoot;
 
   let testView = null; // 행동 시험 전용 두 번째 펫 뷰
@@ -95,7 +95,9 @@ export function mountSettings(ui, getState, setState, { storage, sound, behavior
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     };
     root.querySelector('#bk-import').onchange = async (e) => {
-      const file = e.target.files[0]; if (!file) return;
+      const input = e.target, file = input.files[0];
+      input.value = ''; // 같은 파일을 다시 골라도 change가 오도록 항상 비운다
+      if (!file) return;
       if (!(await ui.confirm('지금 기록을 백업 파일로 덮어쓸까요?'))) return;
       const text = await file.text();
       const imported = storage.importText(text);
@@ -113,6 +115,7 @@ export function mountSettings(ui, getState, setState, { storage, sound, behavior
     root.querySelector('#set-reset-all').onclick = async () => {
       if (!(await ui.confirm('정말 모든 기록을 지울까요?'))) return;
       if (!(await ui.confirm('펫과 별이 전부 사라져요. 정말요?'))) return;
+      onReset(); // 지운 뒤 저장이 되살리지 않도록 상태부터 비운다
       storage.clear(); location.reload();
     };
   }
