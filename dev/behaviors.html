@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>행동 시험</title>
+<link rel="stylesheet" href="../css/pet.css">
+<style>body{margin:0;display:grid;grid-template-columns:1fr 360px;height:100vh;font-family:sans-serif}
+#stage:not([data-room]){background:#fff8e7}#panel{overflow:auto;padding:8px}button{margin:2px;padding:6px 8px}#log{font-size:12px;color:#555}</style></head>
+<body>
+<div id="stage"></div>
+<div id="panel">
+  <select id="kind"><option>mochi</option><option>coco</option><option>pico</option></select>
+  <select id="stage-sel"><option>baby</option><option>child</option><option>adult</option></select>
+  <button id="stop">정지</button> <button id="all">1→72 전부</button>
+  <div id="buttons"></div><div id="log"></div>
+</div>
+<script type="module">
+import { BEHAVIORS } from '../js/behaviors.js';
+import { createPetView } from '../js/pet-view.js';
+const view = createPetView(document.getElementById('stage'), { kind: 'mochi' });
+const log = (m) => { document.getElementById('log').textContent = m; };
+const wrap = document.getElementById('buttons');
+for (const b of Object.values(BEHAVIORS)) {
+  const btn = document.createElement('button'); btn.textContent = `${b.id} ${b.name}`;
+  btn.onclick = () => { log(`${b.id} ${b.name}`); view.play(b); }; wrap.appendChild(btn);
+}
+document.getElementById('kind').onchange = (e) => view.setKind(e.target.value);
+document.getElementById('stage-sel').onchange = (e) => view.setStage(e.target.value);
+document.getElementById('stop').onclick = () => view.stop();
+document.getElementById('all').onclick = async () => { for (let i = 1; i <= 72; i++) { log(`${i} ${BEHAVIORS[i].name}`); await view.play(BEHAVIORS[i]); } };
+view.onGesture((g, d) => log(`gesture: ${g} ${JSON.stringify(d)}`));
+window.view = view; window.BEHAVIORS = BEHAVIORS;
+</script></body></html>

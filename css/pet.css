@@ -1,0 +1,133 @@
+.pet-stage { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.pet-svg { overflow: visible; width: 100%; height: 100%; touch-action: none; user-select: none; }
+.pet { transform-origin: 150px 250px; transform: translate(var(--x, 0px), var(--y, 0px)) scale(var(--scale, 1)); transition: transform 0.9s ease-in-out; }
+.pet[data-stage="baby"]  { --scale: 0.7; }
+.pet[data-stage="child"] { --scale: 0.85; }
+.pet[data-stage="adult"] { --scale: 1; }
+.pet.moving { transition-duration: var(--move-dur, 2s); }
+
+/* 표정: 눈/입 변형은 data-eyes/data-mouth 중 선택된 것만 */
+[data-part="eyes"] > g, [data-part="mouth"] > g { display: none; }
+[data-part="eyes"] > g.on, [data-part="mouth"] > g.on { display: inline; }
+
+/* ---- all ---- */
+.a-bob     { animation: bob 1.2s ease-in-out infinite; }
+.a-hop     { animation: hop 0.6s ease-out 1; }
+.a-hop3    { animation: hop 0.5s ease-out 3; }
+.a-spin    { animation: spin 1s ease-in-out 1; }
+.a-wobble  { animation: wobble 0.8s ease-in-out infinite; }
+.a-squash  { animation: squash 0.5s ease-out 1; }
+.a-shake   { animation: shake 0.3s linear infinite; }
+.a-dizzy   { animation: dizzy 1.2s ease-in-out infinite; }
+.a-lie     { animation: lie 0.8s ease-out forwards; }
+.a-sit     { animation: sit 0.5s ease-out forwards; }
+.a-crouch  { animation: crouch 0.8s ease-out forwards; }
+.a-stretch { animation: stretch 1.6s ease-in-out 1; }
+.a-hide    { animation: hide 3s ease-in-out 1; }
+.a-peek    { animation: peek 2.4s ease-in-out 1; }
+.a-float   { animation: floaty 0.6s ease-in-out infinite alternate; }
+.a-bounceLand { animation: bounceLand 0.9s ease-out 1; }
+.a-dance   { animation: dance 0.5s ease-in-out infinite alternate; }
+.a-jumpRope { animation: hop 0.45s ease-out infinite; }
+.a-run     { animation: run 0.3s linear infinite; }
+.a-walk    { animation: walk 0.5s ease-in-out infinite; }
+.a-roll    { animation: roll 2.4s ease-in-out 1; }
+.a-tremble { animation: shake 0.15s linear infinite; }
+.a-shrink  { animation: shrink 0.5s ease-out 1; }
+.a-lean    { animation: lean 0.6s ease-out forwards; }
+.a-tapGlass { animation: tapGlass 0.6s ease-in-out 3; }
+/* ---- head ---- */
+.a-tilt      { animation: tilt 0.8s ease-in-out 1 forwards; }
+.a-lookL     { animation: lookL 0.6s ease-out forwards; }
+.a-lookR     { animation: lookR 0.6s ease-out forwards; }
+.a-lookUp    { animation: lookUp 0.6s ease-out forwards; }
+.a-nod       { animation: nod 0.9s ease-in-out infinite; }
+.a-nodFast   { animation: nod 0.35s ease-in-out infinite; }
+.a-shakeHead { animation: shakeHead 0.5s ease-in-out 3; }
+.a-bow       { animation: bow 0.6s ease-out forwards; }
+.a-sniff     { animation: sniff 0.4s ease-in-out 4; }
+.a-lookAround { animation: lookAround 1.8s ease-in-out 1; }
+/* ---- arms ---- */
+.a-wave     { animation: wave 0.4s ease-in-out infinite alternate; }
+.a-rub      { animation: rub 0.5s ease-in-out infinite alternate; }
+.a-scratch  { animation: scratch 0.25s linear infinite alternate; }
+.a-raise    { animation: raise 0.5s ease-out forwards; }
+.a-hold     { animation: hold 0.5s ease-out forwards; }
+.a-clap     { animation: clap 0.3s ease-in-out infinite alternate; }
+.a-cover    { animation: cover 0.5s ease-out forwards; }
+.a-thumb    { animation: thumb 0.6s ease-out forwards; }
+.a-brush    { animation: brush 0.25s linear infinite alternate; }
+.a-scribble { animation: scribble 0.2s linear infinite alternate; }
+.a-point    { animation: point 0.5s ease-out forwards; }
+[data-part="armL"] { --m: -1; }
+/* ---- legs / tail ---- */
+.a-walk[data-part="legs"] { animation: legWalk 0.5s ease-in-out infinite alternate; }
+.a-kick  { animation: kick 0.3s ease-in-out 3; }
+.a-curl  { animation: curl 0.4s ease-out forwards; }
+.a-crawl { animation: legWalk 0.7s ease-in-out infinite alternate; }
+.a-wag   { animation: wag 0.3s ease-in-out infinite alternate; transform-origin: 205px 215px; }
+
+@keyframes bob { 0%,100% { translate: 0 0; } 50% { translate: 0 -4px; } }
+@keyframes hop { 0%,100% { translate: 0 0; } 40% { translate: 0 -40px; } }
+@keyframes spin { to { rotate: 360deg; } }
+@keyframes wobble { 0%,100% { rotate: -6deg; } 50% { rotate: 6deg; } }
+@keyframes squash { 0%,100% { scale: 1 1; } 50% { scale: 1.15 0.8; } }
+@keyframes shake { 0%,100% { translate: -3px 0; } 50% { translate: 3px 0; } }
+@keyframes dizzy { 0%,100% { rotate: -12deg; translate: -6px 0; } 50% { rotate: 12deg; translate: 6px 0; } }
+@keyframes lie { to { rotate: 90deg; translate: 30px 40px; } }
+@keyframes sit { to { scale: 1.05 0.85; translate: 0 10px; } }
+@keyframes crouch { to { scale: 0.85 0.75; translate: 0 20px; } }
+@keyframes stretch { 0%,100% { scale: 1 1; } 50% { scale: 0.9 1.2; translate: 0 -10px; } }
+@keyframes hide { 0% { translate: 0 0; } 30%,70% { translate: 320px 0; } 100% { translate: 0 0; } }
+@keyframes peek { 0% { translate: 0 0; } 25%,55% { translate: -200px 0; } 70% { translate: -60px 0; scale: 1.1 1; } 100% { translate: 0 0; } }
+@keyframes floaty { from { translate: 0 0; } to { translate: 0 -12px; } }
+@keyframes bounceLand { 0% { translate: 0 -60px; } 50% { translate: 0 0; scale: 1.2 0.75; } 75% { translate: 0 -15px; scale: 0.95 1.05; } 100% { translate: 0 0; scale: 1 1; } }
+@keyframes dance { from { rotate: -10deg; translate: -14px -6px; } to { rotate: 10deg; translate: 14px -6px; } }
+@keyframes run { 0%,100% { translate: 0 0; } 50% { translate: 0 -10px; } }
+@keyframes walk { 0%,100% { rotate: -3deg; } 50% { rotate: 3deg; translate: 0 -4px; } }
+@keyframes roll { 0% { rotate: 0deg; } 40% { rotate: 90deg; translate: 20px 40px; } 60% { rotate: 90deg; translate: 20px 40px; } 100% { rotate: 0deg; } }
+@keyframes shrink { 0%,100% { scale: 1; } 50% { scale: 0.85; } }
+@keyframes lean { to { rotate: 8deg; translate: 6px 0; } }
+@keyframes tapGlass { 0%,100% { scale: 1; } 50% { scale: 1.12; translate: 0 -4px; } }
+@keyframes tilt { to { rotate: 15deg; } }
+@keyframes lookL { to { translate: -10px 0; } }
+@keyframes lookR { to { translate: 10px 0; } }
+@keyframes lookUp { to { translate: 0 -8px; rotate: -8deg; } }
+@keyframes nod { 0%,100% { rotate: 0deg; } 50% { rotate: 10deg; translate: 0 6px; } }
+@keyframes shakeHead { 0%,100% { translate: 0 0; } 50% { translate: -12px 0; } }
+@keyframes bow { to { rotate: 18deg; translate: 0 12px; } }
+@keyframes sniff { 0%,100% { translate: 0 0; } 50% { translate: 0 4px; scale: 1.03; } }
+@keyframes lookAround { 0%,100% { translate: 0 0; } 25% { translate: -12px 0; } 75% { translate: 12px 0; } }
+@keyframes wave { from { rotate: calc(var(--m, 1) * -40deg); } to { rotate: calc(var(--m, 1) * -100deg); } }
+@keyframes rub { from { rotate: calc(var(--m, 1) * 30deg); translate: calc(var(--m, 1) * -10px) 0; } to { rotate: calc(var(--m, 1) * 50deg); translate: calc(var(--m, 1) * -20px) 0; } }
+@keyframes scratch { from { rotate: calc(var(--m, 1) * 20deg); translate: 0 -6px; } to { rotate: calc(var(--m, 1) * 35deg); translate: 0 6px; } }
+@keyframes raise { to { rotate: calc(var(--m, 1) * -110deg); } }
+@keyframes hold { to { rotate: calc(var(--m, 1) * 70deg); translate: calc(var(--m, 1) * -14px) -6px; } }
+@keyframes clap { from { rotate: calc(var(--m, 1) * 40deg); translate: calc(var(--m, 1) * -10px) 0; } to { rotate: calc(var(--m, 1) * 70deg); translate: calc(var(--m, 1) * -28px) 0; } }
+@keyframes cover { to { rotate: calc(var(--m, 1) * 120deg); translate: calc(var(--m, 1) * -30px) -40px; } }
+@keyframes thumb { to { rotate: calc(var(--m, 1) * -110deg); translate: calc(var(--m, 1) * 10px) 0; } }
+@keyframes brush { from { rotate: calc(var(--m, 1) * 95deg); translate: calc(var(--m, 1) * -34px) -50px; } to { rotate: calc(var(--m, 1) * 110deg); translate: calc(var(--m, 1) * -40px) -46px; } }
+@keyframes scribble { from { rotate: calc(var(--m, 1) * 60deg); translate: calc(var(--m, 1) * -10px) 0; } to { rotate: calc(var(--m, 1) * 66deg); translate: calc(var(--m, 1) * -14px) 2px; } }
+@keyframes point { to { rotate: calc(var(--m, 1) * -90deg); translate: calc(var(--m, 1) * 6px) 0; } }
+@keyframes legWalk { from { translate: 0 0; } to { translate: 0 -6px; } }
+@keyframes kick { 0%,100% { rotate: 0deg; } 50% { rotate: -25deg; translate: 10px -10px; } }
+@keyframes curl { to { scale: 1 0.5; translate: 0 10px; } }
+@keyframes wag { from { rotate: -20deg; } to { rotate: 20deg; } }
+
+/* 효과 입자 */
+.fx { font-size: 22px; animation: fxRise 1.6s ease-out forwards; pointer-events: none; }
+.fx.conf { animation: fxFall 2.2s ease-in forwards; }
+.fx.orbit { animation: fxOrbit 1.2s linear infinite; }
+.fx.rain { animation: fxRain 0.9s linear infinite; }
+@keyframes fxRise { from { opacity: 1; translate: 0 0; } to { opacity: 0; translate: 0 -70px; } }
+@keyframes fxFall { from { opacity: 1; translate: 0 -80px; rotate: 0deg; } to { opacity: 0; translate: 0 160px; rotate: 360deg; } }
+@keyframes fxOrbit { from { rotate: 0deg; translate: 40px 0; } to { rotate: 360deg; translate: 40px 0; } }
+@keyframes fxRain { from { opacity: 1; translate: 0 -20px; } to { opacity: 0; translate: 0 60px; } }
+
+/* 방 분위기: 컨테이너에 data-room, data-gloom */
+.pet-stage[data-room="bath"]  { background: radial-gradient(circle at 50% 80%, #bde0ff, #e8f4ff); }
+.pet-stage[data-room="dark"]  { background: radial-gradient(circle at 50% 70%, #3b3f6b, #1b1d33); }
+.pet-stage[data-room="party"] { background: radial-gradient(circle at 50% 30%, #fff3bf, #ffd8e4); }
+.pet-stage[data-gloom="1"] { filter: brightness(0.9); }
+.pet-stage[data-gloom="2"] { filter: brightness(0.75) saturate(0.8); }
+.pet-stage[data-gloom="3"] { filter: brightness(0.55) saturate(0.6); }
