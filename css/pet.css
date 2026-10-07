@@ -115,13 +115,14 @@
 @keyframes wag { from { rotate: -20deg; } to { rotate: 20deg; } }
 
 /* 효과 입자 */
-.fx { font-size: 22px; animation: fxRise 1.6s ease-out forwards; pointer-events: none; }
+[data-part="legs"] { transform-box: fill-box; transform-origin: 50% 100%; }
+.fx { transform-box: fill-box; transform-origin: center; font-size: 22px; animation: fxRise 1.6s ease-out forwards; pointer-events: none; }
 .fx.conf { animation: fxFall 2.2s ease-in forwards; }
 .fx.orbit { animation: fxOrbit 1.2s linear infinite; }
 .fx.rain { animation: fxRain 0.9s linear infinite; }
 @keyframes fxRise { from { opacity: 1; translate: 0 0; } to { opacity: 0; translate: 0 -70px; } }
 @keyframes fxFall { from { opacity: 1; translate: 0 -80px; rotate: 0deg; } to { opacity: 0; translate: 0 160px; rotate: 360deg; } }
-@keyframes fxOrbit { from { rotate: 0deg; translate: 40px 0; } to { rotate: 360deg; translate: 40px 0; } }
+@keyframes fxOrbit { from { transform: rotate(0deg) translateX(40px); } to { transform: rotate(360deg) translateX(40px); } }
 @keyframes fxRain { from { opacity: 1; translate: 0 -20px; } to { opacity: 0; translate: 0 60px; } }
 
 /* 방 분위기: 컨테이너에 data-room, data-gloom */

@@ -24,7 +24,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 export function createPetView(container, { kind = 'mochi' } = {}) {
   container.classList.add('pet-stage');
   let svg, pet, parts, slots, fxLayer, bubble, bubbleText;
-  let token = 0, playing = false, face = 'normal', stage = 'baby', gestureCb = null, x = 0;
+  let token = 0, playing = false, face = 'normal', stage = 'baby', gestureCb = null, x = 0, baseRoom = null;
 
   function mount(k) {
     container.innerHTML = petSvg(k);
@@ -57,7 +57,7 @@ export function createPetView(container, { kind = 'mochi' } = {}) {
     for (const s of Object.values(slots)) s.innerHTML = '';
     fxLayer.innerHTML = '';
     bubble.style.display = 'none';
-    container.removeAttribute('data-room');
+    if (baseRoom) container.dataset.room = baseRoom; else container.removeAttribute('data-room');
     pet.classList.remove('moving');
   }
 
@@ -116,11 +116,11 @@ export function createPetView(container, { kind = 'mochi' } = {}) {
 
   // 제스처: 탭(부위별)·연타·길게·드래그·놓기·핀치·배경
   function bindGestures() {
-    let downAt = 0, downX = 0, downY = 0, longTimer = null, dragging = false, downInPet = false, downPart, taps = [], pointers = new Set();
+    let downAt = 0, downX = 0, downY = 0, longTimer = null, dragging = false, downInPet = false, downPart, pinched = false, taps = [], pointers = new Set();
     const emit = (g, d) => gestureCb && gestureCb(g, d || {});
     svg.addEventListener('pointerdown', (e) => {
       pointers.add(e.pointerId);
-      if (pointers.size === 2) { clearTimeout(longTimer); emit('pinch'); return; }
+      if (pointers.size === 2) { clearTimeout(longTimer); pinched = true; emit('pinch'); return; }
       downAt = performance.now(); downX = e.clientX; downY = e.clientY; dragging = false;
       // setPointerCapture 뒤에는 move/up 의 e.target 이 svg 가 되므로, 누른 대상은 여기서 기억해 둔다.
       downInPet = !!e.target.closest('.pet');
@@ -131,7 +131,7 @@ export function createPetView(container, { kind = 'mochi' } = {}) {
     svg.addEventListener('pointermove', (e) => {
       if (!pointers.has(e.pointerId) || pointers.size > 1) return;
       const dx = e.clientX - downX, dy = e.clientY - downY;
-      if (!dragging && Math.hypot(dx, dy) > 15 && downInPet) { dragging = true; clearTimeout(longTimer); emit('drag'); }
+      if (!dragging && Math.hypot(dx, dy) > 15 && downInPet) { dragging = true; clearTimeout(longTimer); pet.style.transition = 'none'; emit('drag'); }
       if (dragging) {
         const scale = 300 / svg.getBoundingClientRect().width;
         pet.classList.remove('moving');
@@ -142,7 +142,8 @@ export function createPetView(container, { kind = 'mochi' } = {}) {
     const up = (e) => {
       pointers.delete(e.pointerId); clearTimeout(longTimer);
       if (pointers.size > 0) return;
-      if (dragging) { dragging = false; x = Math.max(-140, Math.min(140, x + (e.clientX - downX) * (300 / svg.getBoundingClientRect().width))); pet.style.setProperty('--x', `${x}px`); pet.style.removeProperty('--y'); emit('drop'); return; }
+      if (pinched) { pinched = false; dragging = false; pet.style.removeProperty('transition'); return; }
+      if (dragging) { dragging = false; x = Math.max(-140, Math.min(140, x + (e.clientX - downX) * (300 / svg.getBoundingClientRect().width))); pet.style.setProperty('--x', `${x}px`); pet.style.removeProperty('--y'); pet.style.removeProperty('transition'); emit('drop'); return; }
       if (performance.now() - downAt > 600) return; // long 이미 처리
       const now = performance.now(); taps = taps.filter((t) => now - t < 1200); taps.push(now);
       if (taps.length >= 4) { taps = []; emit('rapid'); return; }
@@ -162,7 +163,7 @@ export function createPetView(container, { kind = 'mochi' } = {}) {
     setKind(k) { mount(k); },
     setStage(s) { stage = s; pet.dataset.stage = s; },
     setFace(f) { applyFace(f); },
-    setRoom(r) { if (r) container.dataset.room = r; else container.removeAttribute('data-room'); },
+    setRoom(r) { baseRoom = r || null; if (baseRoom) container.dataset.room = baseRoom; else container.removeAttribute('data-room'); },
     setGloom(g) { container.dataset.gloom = String(g); },
     play, stop,
     isPlaying: () => playing,
