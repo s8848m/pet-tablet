@@ -22,7 +22,7 @@ export function createStorage(backend = globalThis.localStorage) {
   const readRaw = () => { try { const t = backend.getItem(STORAGE_KEY); return t ? JSON.parse(t) : null; } catch { return null; } };
   return {
     load() { return migrate(readRaw()); },
-    save(state) { try { backend.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { console.warn('save failed', e); } },
+    save(state) { try { backend.setItem(STORAGE_KEY, JSON.stringify(state)); return true; } catch (e) { console.warn('save failed', e); return false; } },
     clear() { try { backend.removeItem(STORAGE_KEY); } catch {} },
     exportText(state) { return JSON.stringify(state, null, 2); },
     importText(text) {

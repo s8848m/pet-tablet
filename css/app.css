@@ -91,3 +91,5 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 .set-body section { min-width: 0; }
 .hint { color: #888; font-size: 13px; margin: 0; }
 .bt-stage { height: 220px; border-radius: 12px; background: #fff8e7; }
+
+#pet-name { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }

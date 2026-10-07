@@ -24,7 +24,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 export function createPetView(container, { kind = 'mochi' } = {}) {
   container.classList.add('pet-stage');
   let svg, pet, parts, slots, fxLayer, bubble, bubbleText;
-  let token = 0, playing = false, face = 'normal', stage = 'baby', gestureCb = null, x = 0, baseRoom = null;
+  let token = 0, playing = false, face = 'normal', stage = 'baby', gestureCb = null, x = 0, baseRoom = null, pose = null, poseSlot = null, resetPointers = () => {};
 
   function mount(k) {
     container.innerHTML = petSvg(k);
@@ -39,6 +39,8 @@ export function createPetView(container, { kind = 'mochi' } = {}) {
     bubbleText = bubble.querySelector('text');
     pet.dataset.stage = stage;
     applyFace(face);
+    poseSlot = null; applyBase();
+    if (baseRoom) container.dataset.room = baseRoom;
     pet.style.setProperty('--x', `${x}px`);
     bindGestures();
   }
@@ -59,6 +61,15 @@ export function createPetView(container, { kind = 'mochi' } = {}) {
     bubble.style.display = 'none';
     if (baseRoom) container.dataset.room = baseRoom; else container.removeAttribute('data-room');
     pet.classList.remove('moving');
+    poseSlot = null; applyBase();
+  }
+
+  // 지속 자세(잠잘 때 누운 채 이불): 애니메이션 없이 최종 모습만 유지한다. 여러 번 불러도 안전.
+  function applyBase() {
+    parts.all.classList.toggle('a-lying', !!pose && pose.all === 'lie');
+    const want = pose && pose.prop && slots[pose.prop.slot] ? pose.prop : null;
+    if (poseSlot && (!want || want.slot !== poseSlot)) { slots[poseSlot].innerHTML = ''; poseSlot = null; }
+    if (want && !slots[want.slot].childElementCount) { showProp(want); poseSlot = want.slot; }
   }
 
   function spawnFx(name) {
@@ -94,6 +105,8 @@ export function createPetView(container, { kind = 'mochi' } = {}) {
       if (part === 'arms') { parts.armL.classList.add(`a-${preset}`); parts.armR.classList.add(`a-${preset}`); }
       else parts[part]?.classList.add(`a-${preset}`);
     }
+    if (b.prop && poseSlot) { slots[poseSlot].innerHTML = ''; poseSlot = null; } // 행동 소품이 자세 소품을 대신한다
+    if (b.anim && b.anim.all && b.anim.all !== 'lie') parts.all.classList.remove('a-lying');
     showProp(b.prop);
     if (b.room) container.dataset.room = b.room;
     if (b.fx) spawnFx(b.fx);
@@ -117,6 +130,8 @@ export function createPetView(container, { kind = 'mochi' } = {}) {
   // 제스처: 탭(부위별)·연타·길게·드래그·놓기·핀치·배경
   function bindGestures() {
     let downAt = 0, downX = 0, downY = 0, longTimer = null, dragging = false, downInPet = false, downPart, pinched = false, taps = [], pointers = new Set();
+    const dropVisual = () => { pet.style.removeProperty('--y'); pet.style.setProperty('--x', `${x}px`); pet.style.removeProperty('transition'); };
+    resetPointers = () => { pointers.clear(); clearTimeout(longTimer); if (dragging || pinched) dropVisual(); dragging = false; pinched = false; };
     const emit = (g, d) => gestureCb && gestureCb(g, d || {});
     svg.addEventListener('pointerdown', (e) => {
       pointers.add(e.pointerId);
@@ -129,7 +144,7 @@ export function createPetView(container, { kind = 'mochi' } = {}) {
       try { svg.setPointerCapture(e.pointerId); } catch { /* 합성 이벤트 등 */ }
     });
     svg.addEventListener('pointermove', (e) => {
-      if (!pointers.has(e.pointerId) || pointers.size > 1) return;
+      if (!pointers.has(e.pointerId) || pointers.size > 1 || pinched) return;
       const dx = e.clientX - downX, dy = e.clientY - downY;
       if (!dragging && Math.hypot(dx, dy) > 15 && downInPet) { dragging = true; clearTimeout(longTimer); pet.style.transition = 'none'; emit('drag'); }
       if (dragging) {
@@ -142,7 +157,7 @@ export function createPetView(container, { kind = 'mochi' } = {}) {
     const up = (e) => {
       pointers.delete(e.pointerId); clearTimeout(longTimer);
       if (pointers.size > 0) return;
-      if (pinched) { pinched = false; dragging = false; pet.style.removeProperty('transition'); return; }
+      if (pinched) { pinched = false; dragging = false; dropVisual(); return; }
       if (dragging) { dragging = false; x = Math.max(-140, Math.min(140, x + (e.clientX - downX) * (300 / svg.getBoundingClientRect().width))); pet.style.setProperty('--x', `${x}px`); pet.style.removeProperty('--y'); pet.style.removeProperty('transition'); emit('drop'); return; }
       if (performance.now() - downAt > 600) return; // long 이미 처리
       const now = performance.now(); taps = taps.filter((t) => now - t < 1200); taps.push(now);
@@ -156,14 +171,17 @@ export function createPetView(container, { kind = 'mochi' } = {}) {
     };
     svg.addEventListener('pointerup', up);
     svg.addEventListener('pointercancel', up);
+    svg.addEventListener('lostpointercapture', (e) => { pointers.delete(e.pointerId); if (pointers.size === 0) resetPointers(); });
   }
 
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') resetPointers(); });
   mount(kind);
   return {
     setKind(k) { mount(k); },
     setStage(s) { stage = s; pet.dataset.stage = s; },
     setFace(f) { applyFace(f); },
-    setRoom(r) { baseRoom = r || null; if (baseRoom) container.dataset.room = baseRoom; else container.removeAttribute('data-room'); },
+    setRoom(r) { baseRoom = r || null; if (playing) return; if (baseRoom) container.dataset.room = baseRoom; else container.removeAttribute('data-room'); },
+    setPose(p) { pose = p || null; if (!playing) applyBase(); },
     setGloom(g) { container.dataset.gloom = String(g); },
     play, stop,
     isPlaying: () => playing,

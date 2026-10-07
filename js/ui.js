@@ -32,8 +32,16 @@ export function createUI(handlers) {
   $('#sound').addEventListener('click', () => handlers.onSoundToggle());
   let nameTimer = null;
   const nameEl = $('#pet-name');
-  nameEl.addEventListener('pointerdown', () => { nameTimer = setTimeout(() => handlers.onNameLongPress(), 3000); });
-  for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) nameEl.addEventListener(ev, () => clearTimeout(nameTimer));
+  let nameDown = null;
+  const nameCancel = () => { clearTimeout(nameTimer); nameDown = null; };
+  nameEl.addEventListener('pointerdown', (e) => {
+    nameCancel(); nameDown = { x: e.clientX, y: e.clientY };
+    try { nameEl.setPointerCapture(e.pointerId); } catch { /* 합성 이벤트 등 */ }
+    nameTimer = setTimeout(() => { nameDown = null; handlers.onNameLongPress(); }, 3000);
+  });
+  nameEl.addEventListener('pointermove', (e) => { if (nameDown && Math.hypot(e.clientX - nameDown.x, e.clientY - nameDown.y) > 30) nameCancel(); });
+  for (const ev of ['pointerup', 'pointercancel']) nameEl.addEventListener(ev, nameCancel);
+  nameEl.addEventListener('contextmenu', (e) => e.preventDefault());
   $('#task-list').addEventListener('click', (e) => { const li = e.target.closest('.task'); if (li) handlers.onTaskTap(li.dataset.id, li); });
 
   let taskSig = null;

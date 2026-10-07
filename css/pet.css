@@ -20,6 +20,7 @@
 .a-shake   { animation: shake 0.3s linear infinite; }
 .a-dizzy   { animation: dizzy 1.2s ease-in-out infinite; }
 .a-lie     { animation: lie 0.8s ease-out forwards; }
+.a-lying  { rotate: 90deg; translate: 30px 40px; }
 .a-sit     { animation: sit 0.5s ease-out forwards; }
 .a-crouch  { animation: crouch 0.8s ease-out forwards; }
 .a-stretch { animation: stretch 1.6s ease-in-out 1; }

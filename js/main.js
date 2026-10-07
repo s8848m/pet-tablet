@@ -1,7 +1,7 @@
 import { clock } from './clock.js';
 import * as S from './state.js';
 import { BEHAVIORS, pickIdle, pickCare, forTask, forTouch, WAKE_ID, AUTOSLEEP_ID, RETURN_ID } from './behaviors.js';
-import { createStorage } from './storage.js';
+import { createStorage, STORAGE_KEY } from './storage.js';
 import { createPetView } from './pet-view.js';
 import { createUI } from './ui.js';
 import { createSound } from './sound.js';
@@ -20,13 +20,20 @@ function ctx(extra = {}) {
   const now = clock.now();
   return { stats: state.stats, mood: S.mood(state), asleep: state.asleep, gloom: state.gloom, hour: new Date(now).getHours(), result: null, returnedAfterDays: 0, ...extra };
 }
-function commit(next) { state = next; storage.save(state); render(); }
+let lastSaveWarn = -Infinity;
+function persist(s) {
+  if (storage.save(s)) return;
+  if (clock.now() - lastSaveWarn >= 60_000) { lastSaveWarn = clock.now(); ui.toast('저장이 안 돼요'); }
+}
+const SLEEP_POSE = { all: 'lie', prop: { id: 'blanket', slot: 'front' } };
+function commit(next) { state = next; persist(state); render(); }
 function render() {
   ui.render(state, clock.now());
   view.setStage(state.growth.stage);
   view.setGloom(state.gloom);
-  if (!view.isPlaying()) { // 행동 중(욕실·파티 배경)엔 방·표정을 건드리지 않는다
-    view.setRoom(state.asleep ? 'dark' : null);
+  view.setRoom(state.asleep ? 'dark' : null); // 행동 중이면 view 가 기본값만 기억해 둔다
+  view.setPose(state.asleep ? SLEEP_POSE : null);
+  if (!view.isPlaying()) { // 행동 중(욕실·파티 배경)엔 표정을 건드리지 않는다
     view.setFace(MOOD_FACE[S.mood(state)]);
   }
 }
@@ -90,7 +97,7 @@ function onHatch({ kind, name, pin }) {
   playIds([67, 12]);
 }
 function commitNew(s) {
-  state = s; storage.save(state);
+  state = s; persist(state);
   view.setKind(state.pet.kind);
   ui.showScreen('main'); render();
 }
@@ -108,14 +115,14 @@ function tick() {
   if (!state) return;
   const before = state;
   const next = S.rollover(S.applyTime(state), clock.now());
-  if (next !== before) { state = next; render(); if (++tickCount % 10 === 0) storage.save(state); } // 10초마다 저장(버튼은 즉시 저장)
+  if (next !== before) { state = next; render(); if (++tickCount % 10 === 0) persist(state); } // 10초마다 저장(버튼은 즉시 저장)
   const mainVisible = !document.querySelector('#screen-main').hidden && document.querySelector('#overlay').hidden;
   if (mainVisible && clock.now() - lastWakeAt >= WAKE_GRACE_MS && S.shouldAutoSleep(state)) { const r = S.sleepPet(state); commit(r.state); playIds([AUTOSLEEP_ID]); }
 }
 
 function setFromSettings(s) { // 설정 화면의 저장: 화면 전환 없이 저장·렌더만
   const kindChanged = !state || s.pet.kind !== state.pet.kind;
-  state = s; storage.save(state);
+  state = s; persist(state);
   if (kindChanged) view.setKind(state.pet.kind);
   sound.setEnabled(state.settings.sound);
   render();
@@ -139,13 +146,16 @@ function boot() {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
   const loaded = storage.load();
-  if (!loaded) { ui.showScreen('hatch'); return; }
+  if (!loaded) {
+    try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) localStorage.setItem('pet-tablet.broken', raw); } catch { /* 저장소 접근 불가 */ }
+    ui.showScreen('hatch'); return;
+  }
   const r = S.openApp(loaded);
-  state = r.state; storage.save(state);
+  state = r.state; persist(state);
   view.setKind(state.pet.kind);
   sound.setEnabled(state.settings.sound);
   ui.showScreen('main'); render();
-  playIds([r.returnedAfterDays >= S.NEGLECT_DAYS ? RETURN_ID : 12]);
+  if (state.asleep) scheduleIdle(); else playIds([r.returnedAfterDays >= S.NEGLECT_DAYS ? RETURN_ID : 12]);
 }
 window.__pet = { get state() { return state; }, get view() { return view; }, ui, BEHAVIORS };
 boot();

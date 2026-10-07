@@ -50,3 +50,11 @@ test('clear removes the key', () => {
   const ls = fakeLS(); const st = createStorage(ls);
   st.save(base()); st.clear(); assert.equal(st.load(), null);
 });
+
+test('save returns true on success, false when the backend throws', () => {
+  const ls = fakeLS();
+  assert.equal(createStorage(ls).save(base()), true);
+  const bad = { ...ls, setItem() { throw new Error('quota'); } };
+  const warn = console.warn; console.warn = () => {};
+  try { assert.equal(createStorage(bad).save(base()), false); } finally { console.warn = warn; }
+});
