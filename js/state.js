@@ -141,3 +141,91 @@ export function shouldAutoSleep(state, now = clock.now()) {
   const night = h >= 22 || h < 4;
   return night && state.stats.energy < 30;
 }
+
+function yesterdayKey(now, resetHour) { return dayKey(now - DAY_MS, resetHour); }
+
+export function rollover(state, now = clock.now()) {
+  const key = dayKey(now, state.settings.resetHour);
+  if (key <= state.today.key) return state; // 같은 날이거나 시계가 뒤로 간 경우: 건드리지 않음
+  const streak = state.lastAllDoneKey === yesterdayKey(now, state.settings.resetHour) ? state.streak : 0;
+  return { ...state, today: { key, done: {}, allDone: false }, streak };
+}
+
+export function stage(state) { return state.growth.stage; }
+
+function afterStarsChanged(state, now) {
+  const events = [];
+  let s = state;
+  if (s.growth.stage === 'baby' && s.stars >= s.settings.childStars) {
+    s = { ...s, growth: { ...s.growth, stage: 'child', childAt: now } }; events.push('grew');
+  }
+  if (s.growth.stage === 'child' && s.stars >= s.settings.adultStars) {
+    s = { ...s, growth: { ...s.growth, stage: 'adult', adultAt: now } }; events.push('grew');
+  }
+  if (s.goal && !s.goal.reachedAt && s.stars >= s.goal.stars) {
+    s = { ...s, goal: { ...s.goal, reachedAt: now } }; events.push('goal_reached');
+  }
+  return { state: s, events };
+}
+
+export function checkTask(state, taskId, now = clock.now()) {
+  let s = rollover(applyTime(state, now), now);
+  if (!s.tasks.some((t) => t.id === taskId) || s.today.done[taskId]) return { state: s, events: [] };
+  const events = ['checked'];
+  const wasEmpty = Object.keys(s.today.done).length === 0;
+  const done = { ...s.today.done, [taskId]: true };
+  if (wasEmpty) events.push('first_today');
+  const allDone = s.tasks.length > 0 && s.tasks.every((t) => done[t.id]);
+  s = { ...s, stars: s.stars + 1, today: { ...s.today, done, allDone } };
+  if (allDone) {
+    events.push('all_done');
+    if (s.lastAllDoneKey !== s.today.key) {
+      const streak = s.lastAllDoneKey === yesterdayKey(now, s.settings.resetHour) ? s.streak + 1 : 1;
+      s = { ...s, streak, lastAllDoneKey: s.today.key };
+      if (streak % 7 === 0) { s = { ...s, trophies: s.trophies + 1 }; events.push('streak7'); }
+      else if (streak % 7 === 3) { s = { ...s, medals: s.medals + 1 }; events.push('streak3'); }
+    }
+  }
+  const g = afterStarsChanged(s, now);
+  return { state: g.state, events: events.concat(g.events) };
+}
+
+export function uncheckTask(state, taskId, now = clock.now()) {
+  let s = rollover(applyTime(state, now), now);
+  if (!s.today.done[taskId]) return { state: s, events: [] };
+  const done = { ...s.today.done }; delete done[taskId];
+  s = { ...s, stars: Math.max(0, s.stars - 1), today: { ...s.today, done, allDone: false } };
+  return { state: s, events: ['unchecked'] };
+}
+
+export function setGoal(state, { text, stars }) { return { ...state, goal: { text, stars: Number(stars), reachedAt: null } }; }
+export function clearGoal(state) { return { ...state, goal: null }; }
+
+export function addTask(state, { name, icon, slot }) {
+  const max = state.tasks.reduce((m, t) => Math.max(m, Number(t.id.slice(1)) || 0), 0);
+  return { ...state, tasks: [...state.tasks, { id: `t${max + 1}`, name, icon, slot }] };
+}
+export function updateTask(state, id, patch) {
+  return { ...state, tasks: state.tasks.map((t) => (t.id === id ? { ...t, ...patch, id } : t)) };
+}
+export function removeTask(state, id) {
+  const done = { ...state.today.done }; delete done[id];
+  return { ...state, tasks: state.tasks.filter((t) => t.id !== id), today: { ...state.today, done } };
+}
+export function moveTask(state, id, dir) {
+  const tasks = [...state.tasks];
+  const i = tasks.findIndex((t) => t.id === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= tasks.length) return state;
+  [tasks[i], tasks[j]] = [tasks[j], tasks[i]];
+  return { ...state, tasks };
+}
+
+export function isSlotActive(slot, now = clock.now()) {
+  const h = new Date(now).getHours();
+  if (slot === 'any') return true;
+  if (slot === 'morning') return h >= 6 && h < 11;
+  if (slot === 'day') return h >= 11 && h < 17;
+  if (slot === 'evening') return h >= 17 || h < 4;
+  return true;
+}
