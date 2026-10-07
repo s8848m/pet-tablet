@@ -55,7 +55,6 @@ export function createInitialState({ kind, name, pin }, now = clock.now()) {
 
 export function applyTime(state, now = clock.now()) {
   const elapsed = Math.min(Math.max(0, now - state.statsAt), MAX_CATCHUP_MS);
-  if (process.env.DEBUG_APPLY) console.log('[applyTime] elapsed:', elapsed, 'now:', now, 'statsAt:', state.statsAt);
   if (elapsed === 0) return state;
   const stats = { ...state.stats };
   let asleep = state.asleep;
