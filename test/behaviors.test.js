@@ -64,6 +64,16 @@ test('pickIdle is deterministic with injected rng', () => {
   assert.equal(pickIdle(ctx(), () => 0.999), 20);
 });
 
+test('pickIdle: need:idle ≈ 2:1 when need matches; only #21 with hunger 30', () => {
+  let count21 = 0;
+  for (let i = 0; i < 3000; i++) {
+    const id = pickIdle(ctx({ stats: { hunger: 30, fun: 100, clean: 100, energy: 100 } }));
+    if (id === 21) count21++;
+  }
+  const share = count21 / 3000;
+  assert.ok(share >= 0.60 && share <= 0.73, `#21 share ${share.toFixed(3)} outside [0.60, 0.73]`);
+});
+
 test('pickCare: feed ate → 41/42/44/45, refused → 43; wash already_clean → 55; sleep → 56', () => {
   for (let i = 0; i < 50; i++) assert.ok([41, 42, 44, 45].includes(pickCare('feed', ctx({ result: 'ate' }))));
   assert.equal(pickCare('feed', ctx({ result: 'refused' })), 43);
@@ -72,6 +82,10 @@ test('pickCare: feed ate → 41/42/44/45, refused → 43; wash already_clean →
   assert.equal(pickCare('wash', ctx({ result: 'already_clean' })), 55);
   assert.equal(pickCare('sleep', ctx({ result: 'slept' })), 56);
   assert.equal(WAKE_ID, 59); assert.equal(AUTOSLEEP_ID, 60); assert.equal(RETURN_ID, 30); assert.equal(NEGLECT_ID, 28);
+});
+
+test('pickCare with no matching conditions returns null', () => {
+  assert.equal(pickCare('feed', ctx({ result: 'weird' })), null);
 });
 
 test('forTask maps icon/slot and events in order', () => {

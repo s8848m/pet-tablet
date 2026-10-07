@@ -66,7 +66,7 @@ const list = [
   B(54, '오리 인형 목욕', 'wash', 3200, { face: 'laugh', anim: { all: 'bob', armR: 'hold' }, prop: { id: 'duck', slot: 'handR' }, room: 'bath', fx: 'bubbles', sound: 'splash', when: (c) => c.result === 'washed' }),
   B(55, '수건 두르고 반짝', 'wash', 2000, { face: 'smug', anim: { all: 'lean' }, prop: { id: 'towel', slot: 'head' }, fx: 'sparkle', bubble: '깨끗해!', when: (c) => c.result === 'already_clean' }),
   B(56, '이불 덮고 코 골기', 'sleep', 2600, { face: 'sleep', anim: { all: 'lie' }, prop: { id: 'blanket', slot: 'front' }, room: 'dark', fx: 'zzz', sound: 'yawn', when: (c) => c.result === 'slept' }),
-  B(57, '꿈 말풍선', 'asleepIdle', 3000, { face: 'sleep', anim: { all: 'lie' }, prop: { id: 'blanket', slot: 'front' }, fx: 'zzz', bubble: '💭' }),
+  B(57, '꿈 말풍선', 'asleepIdle', 3000, { face: 'sleep', anim: { all: 'lie' }, prop: { id: 'blanket', slot: 'front' }, fx: 'zzz', bubble: ['⭐','🍚','⚽'] }),
   B(58, '이불 차기', 'asleepIdle', 2400, { face: 'sleep', anim: { all: 'lie', legs: 'kick' }, prop: { id: 'blanket', slot: 'floor' }, fx: 'zzz' }),
   B(59, '깨울 때 투덜', 'wake', 2000, { face: 'grumpy', anim: { all: 'sit', armR: 'rub' }, bubble: '으응…', sound: 'yawn' }),
   B(60, '스스로 눕기', 'autosleep', 3000, { face: 'sleepy', anim: { all: 'lie' }, prop: { id: 'blanket', slot: 'front' }, room: 'dark', fx: 'zzz', sound: 'yawn' }),
@@ -90,6 +90,7 @@ export const BEHAVIORS = Object.fromEntries(list.map((b) => [b.id, b]));
 export const WAKE_ID = 59, AUTOSLEEP_ID = 60, RETURN_ID = 30, NEGLECT_ID = 28;
 
 function weightedPick(pairs, rng) {
+  if (pairs.length === 0) return null;
   const total = pairs.reduce((a, [, w]) => a + w, 0);
   let r = rng() * total;
   for (const [b, w] of pairs) { r -= w; if (r < 0) return b.id; }
@@ -97,13 +98,30 @@ function weightedPick(pairs, rng) {
 }
 
 export function pickIdle(ctx, rng = Math.random) {
-  const pool = [];
+  const idles = [];
+  const needs = [];
+
   for (const b of list) {
-    if (ctx.asleep) { if (b.group === 'asleepIdle') pool.push([b, 1]); continue; }
-    if (b.group === 'idle') pool.push([b, 1]);
-    else if (b.group === 'need' && b.when && b.when(ctx)) pool.push([b, b.weight || 2]);
+    if (ctx.asleep) { if (b.group === 'asleepIdle') idles.push(b); continue; }
+    if (b.group === 'idle') idles.push(b);
+    else if (b.group === 'need' && b.when && b.when(ctx)) needs.push(b);
   }
-  return weightedPick(pool, rng);
+
+  if (needs.length > 0) {
+    const pool = [];
+    const totalNeedWeight = needs.reduce((sum, b) => sum + (b.weight || 1), 0);
+
+    // Idles: total weight 1 (uniform distribution)
+    for (const b of idles) pool.push([b, 1 / idles.length]);
+
+    // Needs: total weight 2, split by b.weight
+    for (const b of needs) pool.push([b, 2 * (b.weight || 1) / totalNeedWeight]);
+
+    return weightedPick(pool, rng);
+  } else {
+    // No needs: idle only
+    return weightedPick(idles.map(b => [b, 1]), rng);
+  }
 }
 
 export function pickCare(kind, ctx, rng = Math.random) {
