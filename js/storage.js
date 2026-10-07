@@ -1,10 +1,11 @@
 import { createInitialState, CURRENT_VERSION } from './state.js';
+import { clock } from './clock.js';
 
 export const STORAGE_KEY = 'pet-tablet';
 
 export function migrate(raw) {
   if (!raw || typeof raw !== 'object' || !raw.pet || typeof raw.pet !== 'object') return null;
-  const def = createInitialState({ kind: raw.pet.kind || 'mochi', name: raw.pet.name || '', pin: '0000' }, raw.pet.hatchedAt || Date.now());
+  const def = createInitialState({ kind: raw.pet.kind || 'mochi', name: raw.pet.name || '', pin: '0000' }, raw.pet.hatchedAt || clock.now());
   const s = { ...def, ...raw };
   s.pet = { ...def.pet, ...raw.pet };
   s.stats = { ...def.stats, ...(raw.stats || {}) };
